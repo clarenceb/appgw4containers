@@ -1,0 +1,97 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: contoso-route
+  namespace: test-infra
+spec:
+  parentRefs:
+  - name: gateway-01
+  hostnames:
+  - "contoso.YOUR.DOMAIN"
+  rules:
+  - backendRefs:
+    - name: frontend-v1
+      port: 8080
+      weight: 50
+    - name: frontend-v2
+      port: 8080
+      weight: 50
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: fabrikam-route
+  namespace: test-infra
+spec:
+  parentRefs:
+  - name: gateway-01
+  hostnames:
+  - "fabrikam.YOUR.DOMAIN"
+  rules:
+
+  # This matches calls with the `version=v2` query parameter.
+  # It modifies the request header sent to the service by adding
+  # the `app-version` header with the value `v2`.
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+      queryParams:
+      - type: Exact
+        name: version
+        value: v2
+      method: GET
+    filters:
+    - type: RequestHeaderModifier
+      requestHeaderModifier:
+        add:
+          - name: app-version
+            value: v2
+    backendRefs:
+    - name: frontend-v2
+      port: 8080
+
+  # This matches calls via the gateway with the `app-version` header set to `v2`.
+  # It modifies the request header sent to the service by adding
+  # the `app-version` header with the value `v2`.
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+      headers:
+      - type: Exact
+        name: app-version
+        value: v2
+      method: GET
+    filters:
+    - type: RequestHeaderModifier
+      requestHeaderModifier:
+        add:
+          - name: app-version
+            value: v2
+    backendRefs:
+    - name: frontend-v2
+      port: 8080
+
+  # This match is required for the Fake service SPA UI (`/ui/`) to call its API which is exposed
+  # from the same service on path `/`.  It doesn't propagate the app-version header from the
+  # initial UI load.
+  # The workaround is to match the Referer header and then add the app-version header.
+  - matches:
+    - headers:
+      - type: Exact
+        name: Referer
+        value: http://fabrikam.YOUR.DOMAIN/ui/?version=v2
+      method: GET
+    filters:
+    - type: RequestHeaderModifier
+      requestHeaderModifier:
+        add:
+          - name: app-version
+            value: v2
+    backendRefs:
+    - name: frontend-v2
+      port: 8080
+  - backendRefs:
+    - name: frontend-v1
+      port: 8080
