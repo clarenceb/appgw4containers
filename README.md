@@ -146,11 +146,30 @@ kubectl apply -f gateway.yaml
 
 kubectl get gateway gateway-01 -n test-infra -o yaml -w
 
-fqdn=$(kubectl get gateway gateway-01 -n test-infra -o jsonpath='{.status.addresses[0].value}')
+AGC_FQDN=$(kubectl get gateway gateway-01 -n test-infra -o jsonpath='{.status.addresses[0].value}')
 
-# Update your custom dns zone: contoso.<mydomain> with the $fdqn return above
-# contoso CNAME TTL 60 xxxxxxxxxxxxx.yyyy.alb.azure.com
-# fabrikam CNAME TTL 60 xxxxxxxxxxxxx.yyyy.alb.azure.com
+# Update your custom domain CNAME records in your Azure DNS zone: `contoso.<mydomain>` with the $AGC_FQDN returned above:
+# - contoso CNAME TTL 60 xxxxxxxxxxxxx.yyyy.alb.azure.com
+# - fabrikam CNAME TTL 60 xxxxxxxxxxxxx.yyyy.alb.azure.com
+#
+# If you do not have a custom domain, you can use the default domain for AGC and use path based routing rules
+# to simulate multisite routing and version-based routing.
+#
+# Use azure cli to create the CNAME records in Azure DNS
+ZONE_NAME="YOUR.DOMAIN"  # Update to match your Azure DNS zone name
+DNS_RG="YOUR-DNS-RG"     # Update to match your Azure DNS zone resource group
+az network dns record-set cname set-record \
+    --resource-group $DNS_RG \
+    --zone-name $ZONE_NAME \
+    --record-set-name contoso \
+    --cname $AGC_FQDN \
+    --ttl 60
+az network dns record-set cname set-record \
+    --resource-group $DNS_RG \
+    --zone-name $ZONE_NAME \
+    --record-set-name fabrikam \
+    --cname $AGC_FQDN
+    --ttl 60
 
 # Update httproutes.yaml with your custom domains
 kubectl apply -f httproutes.yaml
