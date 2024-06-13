@@ -1,6 +1,12 @@
 Application Gateway for Containers
 ==================================
 
+A basic demo using App Gateway for Containers (AGC) with AKS and the ALB Controller.
+
+A sample app using [Fake Service](https://github.com/nicholasjackson/fake-service) is used for a UI (SPA) that is accessed via the AGC Gateway API.  This app also serves as a REST API that is also accessed via the AGC Gateway API.
+
+The app sample shows how to pass a query parameter or HTTP header to route to different backends (e.g. v1 or v2).  The sample also shows how to append headers to requests routed to backend services (e.g. `app-version: v2`).
+
 ## AKS and AGC setup
 
 ```sh
@@ -142,7 +148,7 @@ kubectl get gateway gateway-01 -n test-infra -o yaml -w
 
 fqdn=$(kubectl get gateway gateway-01 -n test-infra -o jsonpath='{.status.addresses[0].value}')
 
-# Update your custom dns zone: contoso.>mydomain> with the $fdqn return above
+# Update your custom dns zone: contoso.<mydomain> with the $fdqn return above
 # contoso CNAME TTL 60 xxxxxxxxxxxxx.yyyy.alb.azure.com
 # fabrikam CNAME TTL 60 xxxxxxxxxxxxx.yyyy.alb.azure.com
 
@@ -231,7 +237,7 @@ for i in `seq 1 10`; do curl -s -H "Referer: http://fabrikam.YOUR.DOMAIN/ui/?ver
 "Hello from frontend-v2"
 ```
 
-From the UI:
+From the browser:
 
 [http://fabrikam.YOUR.DOMAIN/](http://fabrikam.YOUR.DOMAIN/)
 
@@ -256,6 +262,9 @@ From the UI:
 }
 ```
 
+![fabrikam-v1-json](img/fabrikam-v1-json.png)
+
+
 [http://fabrikam.YOUR.DOMAIN/?version=v2](http://fabrikam.YOUR.DOMAIN/?version=v2)
 
 ```json
@@ -279,19 +288,28 @@ From the UI:
 }
 ```
 
+![fabrikam-v2-json](img/fabrikam-v2-json.png)
+
 [http://fabrikam.YOUR.DOMAIN/ui/](http://fabrikam.YOUR.DOMAIN/ui/)
 
 * UI shows frontend-v1 -> backend-v1
+
+![fabrikam-v1-default](img/fabrikam-v1-default.png)
+
+[http://fabrikam.YOUR.DOMAIN/ui/?version=v2](http://fabrikam.YOUR.DOMAIN/ui/?version=v2)
+
+* UI shows frontend-v2 -> backend-v2
+
+![fabrikam-v2](img/fabrikam-v2.png)
+
+* `frontend-v2` pod logs show:
 
 ```sh
 # Tail logs for frontend-v2 pod
 kubectl logs -f frontend-v2-d56c9464f-xvcqb -n test-infra
 ```
 
-[http://fabrikam.YOUR.DOMAIN/ui/?version=v2](http://fabrikam.YOUR.DOMAIN/ui/?version=v2)
-
-* UI shows frontend-v1 -> backend-v1
-* `frontend-v2` pod logs show:
+Reload the browser page and view the logs in the terminal:
 
 ```sh
 2024-06-13T04:10:48.506Z [INFO]  Handle inbound request:
@@ -323,3 +341,4 @@ az group delete --resource-group $RESOURCE_GROUP
 * [Quickstart: Deploy Application Gateway for Containers ALB Controller](https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/quickstart-deploy-application-gateway-for-containers-alb-controller)
 * [Quickstart: Create Application Gateway for Containers managed by ALB Controller](https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/quickstart-create-application-gateway-for-containers-managed-by-alb-controller?tabs=new-subnet-aks-vnet)
 * [Multi-site hosting with Application Gateway for Containers - Gateway API](https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/how-to-multiple-site-hosting-gateway-api?tabs=alb-managed)
+* [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/)
