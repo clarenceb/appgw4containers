@@ -256,7 +256,7 @@ for i in `seq 1 10`; do curl -s -H "Referer: http://fabrikam.YOUR.DOMAIN/ui/?ver
 "Hello from frontend-v2"
 ```
 
-From the browser:
+In your web browser, open the URL:
 
 [http://fabrikam.YOUR.DOMAIN/](http://fabrikam.YOUR.DOMAIN/)
 
@@ -311,13 +311,13 @@ From the browser:
 
 [http://fabrikam.YOUR.DOMAIN/ui/](http://fabrikam.YOUR.DOMAIN/ui/)
 
-* UI shows frontend-v1 -> backend-v1
+* UI shows `[frontend-v1]` -> `[backend-v1]`
 
 ![fabrikam-v1-default](img/fabrikam-v1-default.png)
 
 [http://fabrikam.YOUR.DOMAIN/ui/?version=v2](http://fabrikam.YOUR.DOMAIN/ui/?version=v2)
 
-* UI shows frontend-v2 -> backend-v2
+* UI shows `[frontend-v2]` -> `[backend-v2]`
 
 ![fabrikam-v2](img/fabrikam-v2.png)
 
@@ -325,7 +325,8 @@ From the browser:
 
 ```sh
 # Tail logs for frontend-v2 pod
-kubectl logs -f frontend-v2-d56c9464f-xvcqb -n test-infra
+
+kubectl logs -f $(kubectl get pod -n test-infra -l app=frontend-v2 -o name) -n test-infra
 ```
 
 Reload the browser page and view the logs in the terminal:
